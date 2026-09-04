@@ -8,13 +8,13 @@
   </p>
 
   <p align="center">
-    <a href="#-inicio-rápido">Inicio Rápido</a> •
-    <a href="#-arquitectura-en-3-capas">Arquitectura</a> •
-    <a href="#-variables-de-entorno">Variables de Entorno</a> •
-    <a href="#-especificación-de-endpoints">Endpoints</a> •
-    <a href="#-reglas-del-motor-actuarial">Reglas Actuariales</a> •
-    <a href="#-scripts-disponibles">Comandos</a> •
-    <a href="#-licencia">Licencia</a>
+    <a href="#inicio-rápido">Inicio Rápido</a> •
+    <a href="#arquitectura-en-3-capas">Arquitectura</a> •
+    <a href="#variables-de-entorno">Variables de Entorno</a> •
+    <a href="#especificación-de-endpoints">Endpoints</a> •
+    <a href="#reglas-del-motor-actuarial">Reglas Actuariales</a> •
+    <a href="#scripts-disponibles">Comandos</a> •
+    <a href="#licencia">Licencia</a>
   </p>
 
   <p align="center">
@@ -29,7 +29,7 @@
 
 ---
 
-## 📋 Resumen del Proyecto
+## Resumen del Proyecto
 
 **SecureLife Backend** es el servidor de servicios REST y motor actuarial de la plataforma SecureLife. Está diseñado bajo los principios de **Clean Architecture de 3 capas** (Controllers, Services, Repositories), ofreciendo cálculo dinámico de primas de seguro automotor, prevención estricta de inyecciones mediante esquemas Zod en tiempo de ejecución, cabeceras seguras con Helmet y manejo centralizado de excepciones con códigos HTTP normalizados.
 
@@ -38,21 +38,21 @@
 
 ---
 
-## ✨ Capacidades Principales
+## Capacidades Principales
 
-* ⚙️ **Motor Actuarial Automotor:** Algoritmo matemático que calcula primas ponderadas en tiempo real considerando depreciación del vehículo, scoring de kilometraje anual, recargo por equipo de GNC y deducciones fiscales reglamentarias.
-* 🛡️ **Validación Preventiva con Zod:** Middleware `validateBody(schema)` que intercepta y sanitiza las peticiones entrantes antes de llegar a los controladores de negocio.
-* 🧱 **Arquitectura Limpia Desacoplada:** Flujo unidireccional y testeable: Controladores (HTTP) ➔ Servicios (Reglas de Negocio) ➔ Repositorios / Entidades.
-* 🔒 **Seguridad Enterprise:** Protección contra ataques comunes vía cabeceras HTTP de **Helmet**, política de **CORS** estricta y limitación de tasa de peticiones.
-* 🩺 **Health Check & Monitoreo:** Endpoint `/api/v1/health` para verificaciones de disponibilidad en orquestadores de contenedores y balanceadores de carga.
+* **Motor Actuarial Automotor:** Algoritmo matemático que calcula primas ponderadas en tiempo real considerando depreciación del vehículo, scoring de kilometraje anual, recargo por equipo de GNC y deducciones fiscales reglamentarias.
+* **Validación Preventiva con Zod:** Middleware `validateBody(schema)` que intercepta y sanitiza las peticiones entrantes antes de llegar a los controladores de negocio.
+* **Arquitectura Limpia Desacoplada:** Flujo unidireccional y testeable: Controladores (HTTP) -> Servicios (Reglas de Negocio) -> Repositorios / Entidades.
+* **Seguridad Enterprise:** Protección contra ataques comunes vía cabeceras HTTP de **Helmet**, política de **CORS** estricta y limitación de tasa de peticiones.
+* **Health Check & Monitoreo:** Endpoint `/api/v1/health` para verificaciones de disponibilidad en orquestadores de contenedores y balanceadores de carga.
 
 ---
 
-## 🏛️ Arquitectura en 3 Capas
+## Arquitectura en 3 Capas
 
 ```mermaid
 graph TD
-    Client["🌐 Cliente Frontend (Vite) / Mobile"] -->|"HTTP POST / GET"| Middlewares["🛡️ Middlewares Core"]
+    Client["Cliente Frontend (Vite) / Mobile"] -->|"HTTP POST / GET"| Middlewares["Middlewares Core"]
     
     subgraph MiddlewaresCore ["Pipeline de Middlewares"]
         M1["Helmet (Security Headers)"]
@@ -62,11 +62,11 @@ graph TD
     end
     
     Middlewares --> M1 --> M2 --> M3 --> M4
-    M4 -->|"DTO Validado y Tipado"| Controller["🎮 CotizacionesController"]
+    M4 -->|"DTO Validado y Tipado"| Controller["CotizacionesController"]
     
     subgraph BusinessLayer ["Capa de Dominio y Negocio"]
-        Controller -->|"Llamada al Servicio"| Service["⚙️ CotizacionesService"]
-        Service -->|"Cálculo Actuarial"| Engine["📊 Algoritmo Actuarial & Tabla Coberturas"]
+        Controller -->|"Llamada al Servicio"| Service["CotizacionesService"]
+        Service -->|"Cálculo Actuarial"| Engine["Algoritmo Actuarial & Tabla Coberturas"]
         Engine -->|"Resultado Normalizado"| Service
     end
     
@@ -74,7 +74,7 @@ graph TD
     Controller -->|"HTTP 201 Created (JSON)"| Client
 
     subgraph ErrorHandling ["Manejo Global de Excepciones"]
-        Controller -.->|"next(error)"| ErrorMW["🚨 error.middleware.ts (AppError)"]
+        Controller -.->|"next(error)"| ErrorMW["error.middleware.ts (AppError)"]
         ErrorMW -.->|"JSON Normalizado"| Client
     end
 ```
@@ -103,7 +103,7 @@ SecureLife_BackEnd/
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Prerrequisitos
 * **Node.js:** `>= 20.0.0`
@@ -148,7 +148,7 @@ npm start
 
 ---
 
-## ⚙️ Variables de Entorno
+## Variables de Entorno
 
 | Variable | Descripción | Valor por Defecto | Requerido |
 | :--- | :--- | :---: | :---: |
@@ -158,7 +158,7 @@ npm start
 
 ---
 
-## 📡 Especificación de Endpoints
+## Especificación de Endpoints
 
 ### 1. Health Check
 Comprueba la salud del microservicio y la disponibilidad del runtime.
@@ -206,7 +206,7 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 ```
 
 <details>
-<summary><b>🔍 Ver Respuesta Exitosa (HTTP 201 Created)</b></summary>
+<summary><b>Ver Respuesta Exitosa (HTTP 201 Created)</b></summary>
 
 ```json
 {
@@ -242,7 +242,7 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 </details>
 
 <details>
-<summary><b>🚨 Ver Respuesta ante Error de Validación (HTTP 400 Bad Request)</b></summary>
+<summary><b>Ver Respuesta ante Error de Validación (HTTP 400 Bad Request)</b></summary>
 
 ```json
 {
@@ -265,7 +265,7 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 
 ---
 
-## 📊 Reglas del Motor Actuarial
+## Reglas del Motor Actuarial
 
 1. **Planes Base:**
    * `RESPONSABILIDAD_CIVIL`: Base $28.000 | Suma Asegurada $160.000.000 | Sin Franquicia.
@@ -279,7 +279,7 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 
 ---
 
-## 🛠️ Scripts Disponibles
+## Scripts Disponibles
 
 | Comando | Descripción |
 | :--- | :--- |
@@ -289,13 +289,13 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 
 ---
 
-## 🧪 Testing y Calidad de Código
+## Testing y Calidad de Código
 
 * **Tipado Estricto de Dominio:** 100% TypeScript sin uso de `any`.
 * **Manejo Resiliente:** Los errores inesperados no provocan la caída del proceso (`unhandledRejection` y `uncaughtException` capturados con cierre ordenado).
 
 ---
 
-## 📜 Licencia
+## Licencia
 
 Distribuido bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
