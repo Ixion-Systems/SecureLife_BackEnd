@@ -3,6 +3,7 @@ import { CotizacionesController } from './cotizaciones.controller';
 import { CotizacionesService } from './cotizaciones.service';
 import { cotizacionAutoSchema } from './cotizaciones.schema';
 import { validateBody } from '../../middlewares/validate.middleware';
+import { cotizacionInmuebleRouter } from './inmueble/inmueble.routes';
 
 export const cotizacionesRouter = Router();
 
@@ -14,3 +15,6 @@ cotizacionesRouter.post(
   validateBody(cotizacionAutoSchema),
   cotizacionesController.cotizarAuto
 );
+
+cotizacionesRouter.use('/inmueble', cotizacionInmuebleRouter);
+

@@ -1,18 +1,19 @@
 <div align="center">
-  <img src="img/LOGO+TEXT.svg" width="220" alt="SecureLife Logo" />
+  <img src="img/LOGO+TEXT.svg" width="240" alt="SecureLife Logo" />
   
-  # SecureLife • Backend REST API
-  
+  # SecureLife • Backend REST API & Database Engine
+
   <p align="center">
-    <strong>Motor actuarial de cotización en tiempo real, gestión de pólizas y servicios REST de alta disponibilidad.</strong>
+    <strong>Plataforma actuarial de alta disponibilidad, persistencia relacional con PostgreSQL 16, autenticación JWT/RBAC, stored procedures transaccionales y servicios REST para la gestión integral de pólizas y cotizaciones.</strong>
   </p>
 
   <p align="center">
     <a href="#inicio-rápido">Inicio Rápido</a> •
-    <a href="#arquitectura-en-3-capas">Arquitectura</a> •
+    <a href="#arquitectura-del-sistema">Arquitectura</a> •
+    <a href="#capacidades-principales">Capacidades</a> •
+    <a href="#stored-procedures-y-vistas-sql">Procedimientos Almacenados</a> •
+    <a href="#especificación-de-endpoints">Endpoints REST</a> •
     <a href="#variables-de-entorno">Variables de Entorno</a> •
-    <a href="#especificación-de-endpoints">Endpoints</a> •
-    <a href="#reglas-del-motor-actuarial">Reglas Actuariales</a> •
     <a href="#scripts-disponibles">Comandos</a> •
     <a href="#licencia">Licencia</a>
   </p>
@@ -20,10 +21,13 @@
   <p align="center">
     <img src="https://img.shields.io/badge/Node.js_20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 20+" />
     <img src="https://img.shields.io/badge/Express_4.21-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express 4.21" />
+    <img src="https://img.shields.io/badge/PostgreSQL_16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
+    <img src="https://img.shields.io/badge/Prisma_6-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma ORM" />
     <img src="https://img.shields.io/badge/TypeScript_5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 5.9" />
+    <img src="https://img.shields.io/badge/JWT_Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT Auth" />
     <img src="https://img.shields.io/badge/Validation-Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white" alt="Zod Validation" />
     <img src="https://img.shields.io/badge/Security-Helmet-FF6B6B?style=for-the-badge&logo=shield&logoColor=white" alt="Helmet Security" />
-    <img src="https://img.shields.io/badge/License-MIT-006E2F?style=for-the-badge" alt="License MIT" />
+    <img src="https://img.shields.io/badge/Sprint-2-006E2F?style=for-the-badge" alt="Sprint 2" />
   </p>
 </div>
 
@@ -31,51 +35,79 @@
 
 ## Resumen del Proyecto
 
-**SecureLife Backend** es el servidor de servicios REST y motor actuarial de la plataforma SecureLife. Está diseñado bajo los principios de **Clean Architecture de 3 capas** (Controllers, Services, Repositories), ofreciendo cálculo dinámico de primas de seguro automotor, prevención estricta de inyecciones mediante esquemas Zod en tiempo de ejecución, cabeceras seguras con Helmet y manejo centralizado de excepciones con códigos HTTP normalizados.
+**SecureLife Backend** es el núcleo de servicios REST y motor de reglas actuariales de la plataforma SecureLife. Diseñado bajo los estándares de **Clean Architecture de 3 capas** (Controllers, Services, Repositories) combinada con **PostgreSQL 16**, Prisma ORM y **Stored Procedures transaccionales (PL/pgSQL)** para garantizar la integridad referencial y cálculos actuariales deterministas a nivel de base de datos.
 
-> [!TIP]
-> Compatible con Node.js 20+ y ECMAScript 2024. Diseñado para desacoplar completamente las reglas de negocio de los protocolos de transporte HTTP.
+El sistema gestiona el ciclo completo de autenticación de asegurados (con soporte dual DNI / Email), cotizaciones en tiempo real para múltiples ramos (Automotor e Inmuebles), emisión de pólizas, métricas agregadas del panel de control y sincronización periódica en segundo plano.
+
+> [!IMPORTANT]
+> **Base de Datos Embebida Zero-Setup:** El proyecto cuenta con un entorno PostgreSQL 16 integrado que inicializa el clúster localmente de forma automática sin requerir la instalación manual de software adicional ni configuraciones complejas de Docker.
 
 ---
 
 ## Capacidades Principales
 
-* **Motor Actuarial Automotor:** Algoritmo matemático que calcula primas ponderadas en tiempo real considerando depreciación del vehículo, scoring de kilometraje anual, recargo por equipo de GNC y deducciones fiscales reglamentarias.
-* **Validación Preventiva con Zod:** Middleware `validateBody(schema)` que intercepta y sanitiza las peticiones entrantes antes de llegar a los controladores de negocio.
-* **Arquitectura Limpia Desacoplada:** Flujo unidireccional y testeable: Controladores (HTTP) -> Servicios (Reglas de Negocio) -> Repositorios / Entidades.
-* **Seguridad Enterprise:** Protección contra ataques comunes vía cabeceras HTTP de **Helmet**, política de **CORS** estricta y limitación de tasa de peticiones.
-* **Health Check & Monitoreo:** Endpoint `/api/v1/health` para verificaciones de disponibilidad en orquestadores de contenedores y balanceadores de carga.
+* **Autenticación Dual & Control de Acceso por Roles (RBAC):** Login y registro seguro mediante Email o DNI, contraseñas hasheadas con `bcrypt`, generación de tokens JWT efímeros y middleware de autorización preventiva (`requireAuth`).
+* **Cálculo Actuarial por Stored Procedures:** La matemática actuarial de primas, depreciación de suma asegurada, scoring de riesgo y recargos técnicos se ejecuta directamente en el motor de base de datos con alta performance y atomicidad.
+* **Módulo Multirramo de Cotizaciones:**
+  * **Automotor:** Planes de Responsabilidad Civil, Terceros Completo y Todo Riesgo con franquicia; ponderación por antigüedad, GNC y kilometraje anual.
+  * **Inmuebles (Hogar):** Planes Esencial, Integral y Premium; coeficientes de riesgo por zona sísmica/inundación, tipo de propiedad, superficie cubierta y medidas de seguridad (alarmas, cámaras, rejas).
+* **Dashboard de Asegurados:** Endpoints analíticos optimizados con vistas SQL (`v_dashboard_active_policies`, `v_client_audit_log`) para consultar métricas, distribución de coberturas, pólizas activas y auditoría de eventos.
+* **Validación Preventiva con Zod:** Sanitización estricta de payloads entrantes mediante esquemas tipados antes de alcanzar los controladores.
+* **Seguridad & Resiliencia Enterprise:** Cabeceras HTTP endurecidas con Helmet, CORS estricto, rate limiting y manejo centralizado de excepciones mediante la clase de dominio `AppError`.
+* **Sync Scheduler:** Proceso periódico en segundo plano para tareas de mantenimiento, actualización de pólizas y sincronización de índices.
 
 ---
 
-## Arquitectura en 3 Capas
+## Arquitectura del Sistema
 
 ```mermaid
 graph TD
-    Client["Cliente Frontend (Vite) / Mobile"] -->|"HTTP POST / GET"| Middlewares["Middlewares Core"]
-    
-    subgraph MiddlewaresCore ["Pipeline de Middlewares"]
-        M1["Helmet (Security Headers)"]
-        M2["CORS (Restricción de Origen)"]
-        M3["express.json() (Parsing)"]
-        M4["validateBody(ZodSchema)"]
+    Client["Cliente Frontend / Backoffice"] -->|"HTTP GET / POST / PUT"| MW["Pipeline de Middlewares"]
+
+    subgraph Pipeline ["Capa de Seguridad & Middlewares"]
+        MW --> M1["Helmet (Cabeceras HTTP)"]
+        M1 --> M2["CORS (Restricción de Origen)"]
+        M2 --> M3["express.json() (Parsing)"]
+        M3 --> M4["validateBody(ZodSchema)"]
+        M4 --> M5["requireAuth (JWT Validator)"]
     end
-    
-    Middlewares --> M1 --> M2 --> M3 --> M4
-    M4 -->|"DTO Validado y Tipado"| Controller["CotizacionesController"]
-    
-    subgraph BusinessLayer ["Capa de Dominio y Negocio"]
-        Controller -->|"Llamada al Servicio"| Service["CotizacionesService"]
-        Service -->|"Cálculo Actuarial"| Engine["Algoritmo Actuarial & Tabla Coberturas"]
-        Engine -->|"Resultado Normalizado"| Service
+
+    M5 -->|"DTO Sanitizado & Usuario Autenticado"| Controllers["Capa de Controladores (HTTP)"]
+
+    subgraph ControllersLayer ["Controladores"]
+        C1["AuthController"]
+        C2["CotizacionesController"]
+        C3["DashboardController"]
     end
-    
-    Service -->|"CotizacionAutoResultado"| Controller
-    Controller -->|"HTTP 201 Created (JSON)"| Client
+
+    Controllers --> ControllersLayer
+
+    subgraph ServicesLayer ["Capa de Servicios (Reglas de Negocio)"]
+        S1["AuthService (bcrypt + JWT)"]
+        S2["CotizacionesService (Actuarial Logic)"]
+        S3["DashboardService (Agregaciones)"]
+    end
+
+    C1 --> S1
+    C2 --> S2
+    C3 --> S3
+
+    subgraph PersistenceLayer ["Capa de Persistencia & Base de Datos"]
+        Repo["Repositories / Prisma Client"]
+        SP["Stored Procedures (PL/pgSQL)"]
+        DB[(PostgreSQL 16 Database)]
+        
+        Repo --> DB
+        SP --> DB
+    end
+
+    S1 --> Repo
+    S2 --> SP
+    S3 --> Repo
 
     subgraph ErrorHandling ["Manejo Global de Excepciones"]
-        Controller -.->|"next(error)"| ErrorMW["error.middleware.ts (AppError)"]
-        ErrorMW -.->|"JSON Normalizado"| Client
+        Controllers -.->|"next(err)"| ErrorMW["error.middleware.ts (AppError)"]
+        ErrorMW -.->|"JSON Normalizado (status, message, code)"| Client
     end
 ```
 
@@ -83,23 +115,144 @@ graph TD
 
 ```text
 SecureLife_BackEnd/
-├── img/                      # Logotipos y recursos visuales para documentación
+├── prisma/
+│   ├── schema.prisma                  # Esquema declarativo de modelos de dominio
+│   └── migrations/                    # Scripts DDL y Stored Procedures versionados
+│       ├── 01_views_and_procedures.sql     # Vistas analíticas y procedimientos base
+│       ├── 02_cotizador_procedures.sql     # Stored Procedures del cotizador
+│       ├── 03_cotizacion_automotor_sp.sql  # Cálculo y persistencia automotor
+│       └── 04_cotizacion_inmueble_sp.sql   # Cálculo y persistencia inmuebles
+├── scripts/                           # Scripts de verificación y testing de endpoints
 ├── src/
-│   ├── app.ts                # Configuración de Express, middlewares globales y montaje de rutas
-│   ├── server.ts             # Punto de entrada HTTP y cierre seguro (graceful shutdown)
+│   ├── app.ts                         # Configuración central de Express y rutas
+│   ├── server.ts                      # Entrada HTTP, inicializador de BD y graceful shutdown
+│   ├── config/                        # Conexión a base de datos y variables de entorno
 │   ├── middlewares/
-│   │   ├── error.middleware.ts     # Manejador centralizado de excepciones y clase AppError
-│   │   └── validate.middleware.ts  # Middleware genérico de validación Zod (validateBody)
-│   └── modules/
-│       └── cotizaciones/           # Módulo de Cotizaciones Automotor
-│           ├── cotizaciones.controller.ts  # Controlador HTTP (petición/respuesta)
-│           ├── cotizaciones.routes.ts      # Router Express con validación de esquema
-│           ├── cotizaciones.schema.ts      # Esquemas Zod y contratos de transferencia (DTO)
-│           └── cotizaciones.service.ts     # Lógica actuarial pura y cálculo de primas
-├── .env.example              # Plantilla de variables de entorno públicas
-├── package.json              # Scripts y dependencias
-└── tsconfig.json             # Configuración TypeScript para Node 20+
+│   │   ├── auth.middleware.ts         # Validación de JWT y extracción de sesión
+│   │   ├── error.middleware.ts        # Manejador central de errores y clase AppError
+│   │   └── validate.middleware.ts     # Middleware genérico de validación Zod
+│   ├── modules/
+│   │   ├── auth/                      # Módulo de autenticación (Login, Registro, Perfil)
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── auth.schema.ts
+│   │   │   └── auth.service.ts
+│   │   ├── cotizaciones/              # Módulos de cotización por ramo
+│   │   │   ├── auto/                  # Cotizador Automotor (Schema, Controller, Service)
+│   │   │   ├── inmueble/              # Cotizador Inmuebles (Schema, Controller, Service)
+│   │   │   └── cotizaciones.routes.ts # Enrutador unificado de cotizaciones
+│   │   ├── cotizador/                 # Scheduler y orquestador de cotizaciones
+│   │   │   └── cotizador.sync.ts
+│   │   └── dashboard/                 # Panel de asegurados y métricas de usuario
+│   │       ├── dashboard.controller.ts
+│   │       ├── dashboard.routes.ts
+│   │       └── dashboard.service.ts
+│   └── types/                         # Definiciones de tipos globales
+├── .env.example                       # Plantilla de variables de entorno
+├── docker-compose.yml                 # Configuración de PostgreSQL para despliegue
+├── package.json                       # Dependencias y scripts de ejecución
+└── tsconfig.json                      # Configuración de compilación TypeScript
 ```
+
+---
+
+## Stored Procedures y Vistas SQL
+
+Para garantizar la máxima velocidad de cálculo y cumplir con las normas de integridad actuarial, la lógica transaccional de cálculo y emisión reside en procedimientos almacenados en PostgreSQL:
+
+| Nombre | Tipo | Descripción |
+| :--- | :---: | :--- |
+| `sp_calcular_cotizacion_auto` | `FUNCTION` | Calcula la prima mensual, suma asegurada depreciada, recargo GNC y bonificación por kilometraje para un rodado. |
+| `sp_crear_cotizacion_automotor` | `PROCEDURE` | Ejecuta el cálculo actuarial, genera el registro de cotización con su desglose impositivo y emite el ID de transacción. |
+| `sp_calcular_cotizacion_inmueble` | `FUNCTION` | Evalúa el riesgo del hogar según zona de siniestralidad, medidas de seguridad y superficie para tarifar planes Esencial, Integral o Premium. |
+| `sp_request_roadside_assistance` | `PROCEDURE` | Registra y despacha una solicitud de auxilio mecánico o grúa vinculada a una póliza automotor activa. |
+| `v_dashboard_active_policies` | `VIEW` | Vista optimizada que reúne pólizas vigentes, vehículos/inmuebles asociados y estado de cobranza. |
+| `v_client_audit_log` | `VIEW` | Historial cronológico de interacciones, pagos, modificaciones de cobertura y cotizaciones por usuario. |
+
+---
+
+## Especificación de Endpoints
+
+### 1. Autenticación (`/api/v1/auth`)
+
+| Método | Endpoint | Middleware | Descripción |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/register` | `validateBody(RegisterSchema)` | Registro de nuevo cliente con DNI, Email, Teléfono y Password. |
+| `POST` | `/api/v1/auth/login` | `validateBody(LoginSchema)` | Autenticación con identificador dual (`email` o `dni`) y `password`. Retorna JWT. |
+| `GET` | `/api/v1/auth/profile` | `requireAuth` | Obtiene los datos de perfil del usuario actualmente autenticado. |
+
+<details>
+<summary><b>Ver Ejemplo: POST /api/v1/auth/login</b></summary>
+
+**Payload:**
+```json
+{
+  "identificador": "35123456",
+  "password": "PasswordSegura123!"
+}
+```
+
+**Respuesta Exitosa (HTTP 200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "c8b417e8-8a89-4fa2-8b9a-14d101e9d1a1",
+      "nombre": "Juan Pérez",
+      "email": "juan.perez@example.com",
+      "dni": "35123456",
+      "rol": "CLIENTE"
+    }
+  }
+}
+```
+</details>
+
+---
+
+### 2. Cotizaciones (`/api/v1/cotizaciones`)
+
+| Método | Endpoint | Middleware | Descripción |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/cotizaciones/auto` | `validateBody(CotizacionAutoSchema)` | Cotiza seguro automotor con evaluación actuarial mediante SP. |
+| `POST` | `/api/v1/cotizaciones/inmueble` | `validateBody(CotizacionInmuebleSchema)` | Cotiza seguro de hogar / inmuebles con ponderación de riesgo sísmico y seguridad. |
+
+---
+
+### 3. Dashboard de Clientes (`/api/v1/dashboard`)
+
+> Todos los endpoints del dashboard requieren el encabezado `Authorization: Bearer <token>`.
+
+| Método | Endpoint | Middleware | Descripción |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/dashboard/summary` | `requireAuth` | Resumen ejecutivo: total de pólizas activas, inversión mensual, siniestros abiertos y avisos pendientes. |
+| `GET` | `/api/v1/dashboard/policies` | `requireAuth` | Listado detallado de coberturas contratadas con número de póliza, vigencia y montos. |
+| `GET` | `/api/v1/dashboard/activity` | `requireAuth` | Historial cronológico de eventos, pagos y solicitudes de asistencia. |
+
+---
+
+### 4. Health Check
+
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/health` | Verifica la disponibilidad de la API, el estado de la conexión a la base de datos y el uptime. |
+
+---
+
+## Variables de Entorno
+
+Configura estas variables en tu archivo `.env` en la raíz de `SecureLife_BackEnd`:
+
+| Variable | Descripción | Valor Típico / Ejemplo | Requerido |
+| :--- | :--- | :--- | :---: |
+| `PORT` | Puerto de escucha del servidor HTTP | `3000` | No (default: `3000`) |
+| `NODE_ENV` | Entorno de ejecución (`development`, `production`, `test`) | `development` | Sí |
+| `CORS_ORIGIN` | Origen frontend permitido para solicitudes web | `http://localhost:5173` | Sí |
+| `DATABASE_URL` | Cadena de conexión PostgreSQL | `postgresql://postgres:postgres@localhost:5432/securelife_db` | Sí |
+| `JWT_SECRET` | Clave criptográfica para firma de tokens de sesión | `tu_clave_secreta_super_segura_2026` | Sí |
+| `JWT_EXPIRES_IN` | Tiempo de validez del JWT | `24h` | No (default: `24h`) |
 
 ---
 
@@ -111,7 +264,7 @@ SecureLife_BackEnd/
 
 ### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/tu-organizacion/SecureLife_BackEnd.git
+git clone https://github.com/Ixion-Systems/SecureLife_BackEnd.git
 cd SecureLife_BackEnd
 ```
 
@@ -121,161 +274,29 @@ npm install
 ```
 
 > [!NOTE]
-> En entornos **Windows PowerShell**, si experimentas restricciones de ejecución de scripts (`PSSecurityException`), ejecuta los comandos anteponiendo `cmd /c` (ej: `cmd /c npm install` o `cmd /c npm run dev`).
+> En entornos **Windows PowerShell**, ejecuta los comandos de Node anteponiendo `cmd /c` (ej: `cmd /c npm install` o `cmd /c npm run dev`) para evitar restricciones de ejecución de scripts (`PSSecurityException`).
 
 ### 3. Configurar Variables de Entorno
-Copia la plantilla `.env.example` y crea tu archivo `.env`:
-
 ```bash
-# En Windows (CMD)
+# Windows
 copy .env.example .env
 
-# En Linux / macOS / PowerShell
+# Linux / macOS / Bash
 cp .env.example .env
 ```
 
-### 4. Iniciar en Modo Desarrollo
+### 4. Inicializar Base de Datos y Migraciones
+Aplica el esquema declarativo de Prisma y carga los procedimientos almacenados actuariales:
+
+```bash
+cmd /c npx prisma db push
+```
+
+### 5. Iniciar en Modo Desarrollo
 ```bash
 npm run dev
 ```
-El servidor se iniciará en `http://localhost:3000` con recarga automática en caliente vía `tsx watch`.
-
-### 5. Compilar y Ejecutar en Producción
-```bash
-npm run build
-npm start
-```
-
----
-
-## Variables de Entorno
-
-| Variable | Descripción | Valor por Defecto | Requerido |
-| :--- | :--- | :---: | :---: |
-| `PORT` | Puerto TCP de escucha del servidor Express | `3000` | No |
-| `NODE_ENV` | Entorno de ejecución (`development`, `production`, `test`) | `development` | Sí |
-| `CORS_ORIGIN` | Origen web permitido para solicitudes CORS de navegadores | `http://localhost:5173` | Sí |
-
----
-
-## Especificación de Endpoints
-
-### 1. Health Check
-Comprueba la salud del microservicio y la disponibilidad del runtime.
-
-* **Ruta:** `GET /api/v1/health`
-* **Autenticación:** Pública
-* **Respuesta Exitosa (HTTP 200):**
-```json
-{
-  "status": "success",
-  "message": "SecureLife API en funcionamiento",
-  "environment": "development",
-  "timestamp": "2026-09-04T15:22:17.107Z"
-}
-```
-
----
-
-### 2. Cotización de Seguro Automotor
-Procesa los datos del titular, especificaciones del rodado y calcula la prima mensual con desglose técnico.
-
-* **Ruta:** `POST /api/v1/cotizaciones/auto`
-* **Middleware:** `validateBody(CotizacionAutoSchema)`
-* **Autenticación:** Pública
-* **Cuerpo de la Petición (`application/json`):**
-```json
-{
-  "titular": {
-    "nombreCompleto": "Juan Perez",
-    "dni": "35123456",
-    "email": "juan.perez@example.com",
-    "telefono": "1145678901"
-  },
-  "vehiculo": {
-    "patente": "AE123CD",
-    "marca": "Toyota",
-    "modelo": "Corolla",
-    "anio": 2022,
-    "tieneGnc": false,
-    "kilometrajePromedioAnual": 12000
-  },
-  "coberturaSolicitada": "TERCEROS_COMPLETO",
-  "conductoresAdicionales": []
-}
-```
-
-<details>
-<summary><b>Ver Respuesta Exitosa (HTTP 201 Created)</b></summary>
-
-```json
-{
-  "status": "success",
-  "data": {
-    "cotizacionId": "fe0e58e0-5b59-4834-8d44-c7f282b1ddc9",
-    "id": "fe0e58e0-5b59-4834-8d44-c7f282b1ddc9",
-    "cobertura": "TERCEROS_COMPLETO",
-    "primaMensual": 64638,
-    "primaMensualEstimada": 64638,
-    "sumaAsegurada": 19760000,
-    "franquiciaMonto": 0,
-    "franquicia": null,
-    "detalleCalculo": {
-      "base": 54000,
-      "recargoGnc": 0,
-      "bonificacion": 2700,
-      "impuestos": 13338
-    },
-    "desglose": {
-      "premioBase": 54000,
-      "recargoGnc": 0,
-      "ajusteKilometraje": -2700,
-      "recargoConductores": 0,
-      "impuestos": 13338
-    },
-    "fechaCalculo": "2026-09-04T15:22:17.107Z",
-    "origen": "api"
-  }
-}
-```
-
-</details>
-
-<details>
-<summary><b>Ver Respuesta ante Error de Validación (HTTP 400 Bad Request)</b></summary>
-
-```json
-{
-  "status": "fail",
-  "message": "Error de validación en la solicitud",
-  "errors": [
-    {
-      "field": "titular.dni",
-      "message": "DNI debe contener entre 7 y 8 dígitos sin puntos ni espacios"
-    },
-    {
-      "field": "vehiculo.patente",
-      "message": "Solo letras y números en la patente"
-    }
-  ]
-}
-```
-
-</details>
-
----
-
-## Reglas del Motor Actuarial
-
-1. **Planes Base:**
-   * `RESPONSABILIDAD_CIVIL`: Base $28.000 | Suma Asegurada $160.000.000 | Sin Franquicia.
-   * `TERCEROS_COMPLETO`: Base $54.000 | Suma Asegurada $26.000.000 | Sin Franquicia.
-   * `TODO_RIESGO_CON_FRANQUICIA`: Base $92.000 | Suma Asegurada $38.000.000 | Franquicia fija $350.000.
-2. **Antigüedad del Rodado:** Factor multiplicador actuarial según años de uso (repuestos nuevos, disponibilidad y siniestralidad mecánica).
-3. **Depreciación de Suma Asegurada:** Coeficiente anual aproximado del 6% para el valor de reposición de casco.
-4. **Equipo de GNC:** Recargo mandatorio del 15% sobre la base actuarial.
-5. **Bonificación por Scoring de Kilometraje:** Bonificación del 8% para vehículos con kilometraje anual menor a 12.000 km.
-6. **Cargas Impositivas:** 26% final correspondiente a IVA (21%) más Sellos e impuestos regulatorios de la Superintendencia de Seguros de la Nación (SSN).
+El servidor quedará disponible en `http://localhost:3000` con recarga en caliente automática vía `tsx watch`.
 
 ---
 
@@ -289,13 +310,6 @@ Procesa los datos del titular, especificaciones del rodado y calcula la prima me
 
 ---
 
-## Testing y Calidad de Código
-
-* **Tipado Estricto de Dominio:** 100% TypeScript sin uso de `any`.
-* **Manejo Resiliente:** Los errores inesperados no provocan la caída del proceso (`unhandledRejection` y `uncaughtException` capturados con cierre ordenado).
-
----
-
 ## Licencia
 
-Distribuido bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+Distribuido bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más información.

@@ -1,0 +1,475 @@
+// SecureLife - Prisma Database Schema
+// PostgreSQL 16 3NF Enterprise Relational Model
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CLIENTE
+  PRODUCTOR_PAS
+  ADMIN
+  OPERADOR
+}
+
+enum RolEmpleado {
+  ADMIN
+  COTIZACIONES
+  SINIESTROS
+  GRUA_AUXILIO
+  SUPERVISOR
+}
+
+enum RamoSeguro {
+  AUTOMOTOR
+  VIDA
+  HOGAR_INMUEBLE
+  OBJETO_PERSONAL
+}
+
+enum TipoInmueble {
+  CASA
+  DEPARTAMENTO
+  PH
+  COUNTRY_BARRIO_CERRADO
+  LOCAL_COMERCIAL
+  OTRO
+}
+
+enum ParentescoBeneficiario {
+  CONYUGE
+  HIJO
+  PADRE_MADRE
+  HERMANO
+  OTRO
+}
+
+enum TipoObjetoPersonal {
+  SMARTPHONE
+  NOTEBOOK
+  TABLET
+  CAMARA
+  BICICLETA
+  SMARTWATCH
+  INSTRUMENTO_MUSICAL
+  EQUIPO_ELECTRONICO
+  OTRO
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  email            String            @unique
+  passwordHash     String            @map("password_hash")
+  role             Role              @default(CLIENTE)
+  isActive         Boolean           @default(true) @map("is_active")
+  emailVerified    Boolean           @default(false) @map("email_verified")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?         @map("deleted_at") @db.Timestamptz(6)
+
+  // Relaciones
+  profile          UserProfile?
+  productorProfile ProductorProfile?
+  refreshTokens    RefreshToken[]
+  cotizaciones     Cotizacion[]
+  polizas          Poliza[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model UserProfile {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @unique @map("user_id") @db.Uuid
+  user          User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  dni           String    @unique
+  phone         String?
+  birthDate     DateTime? @map("birth_date") @db.Date
+  streetAddress String?   @map("street_address")
+  city          String?
+  postalCode    String?   @map("postal_code")
+  province      String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("user_profiles")
+}
+
+model ProductorProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  matriculaSsn   String   @unique @map("matricula_ssn")
+  organismo      String?
+  commissionRate Decimal  @default(10.00) @map("commission_rate") @db.Decimal(5, 2)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("productor_profiles")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Cotizacion {
+  id               String      @id @default(uuid()) @db.Uuid
+  numeroCotizacion String      @unique @map("numero_cotizacion")
+  userId           String?     @map("user_id") @db.Uuid
+  user             User?       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  ramo             RamoSeguro  @default(AUTOMOTOR)
+  estado           String      @default("PENDIENTE")
+  datosRiesgo      Json        @map("datos_riesgo")
+  primaEstimada    Decimal     @map("prima_estimada") @db.Decimal(14, 2)
+  sumaAsegurada    Decimal     @map("suma_asegurada") @db.Decimal(14, 2)
+  tipoRevision     String      @default("REVISION_ESTANDAR") @map("tipo_revision") // REVISION_ESTANDAR | REVISION_EXTENSA
+  esManual         Boolean     @default(false) @map("es_manual")
+  documentosAdjuntos Json?     @map("documentos_adjuntos") // Fotos y documentos de inspección
+  observacionesPerito String?  @db.Text @map("observaciones_perito")
+  fechaRespuesta   DateTime?   @map("fecha_respuesta") @db.Timestamptz(6)
+  peritoAsignadoId String?     @map("perito_asignado_id") @db.Uuid
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  polizas                  Poliza[]
+  cotizacionVida           CotizacionVida?
+  cotizacionObjetoPersonal CotizacionObjetoPersonal?
+
+  @@index([userId])
+  @@index([ramo])
+  @@index([tipoRevision])
+  @@index([estado])
+  @@map("cotizaciones")
+}
+
+model Poliza {
+  id                String                    @id @default(uuid()) @db.Uuid
+  numeroPoliza      String                    @unique @map("numero_poliza")
+  clienteId         String                    @map("cliente_id") @db.Uuid
+  cliente           User                      @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  cotizacionId      String?                   @map("cotizacion_id") @db.Uuid
+  cotizacion        Cotizacion?               @relation(fields: [cotizacionId], references: [id], onDelete: Restrict)
+  ramo              RamoSeguro
+  planNombre        String                    @map("plan_nombre")
+  primaAnual        Decimal                   @map("prima_anual") @db.Decimal(14, 2)
+  premioMensual     Decimal                   @map("premio_mensual") @db.Decimal(14, 2)
+  vigenciaDesde     DateTime                  @map("vigencia_desde") @db.Timestamptz(6)
+  vigenciaHasta     DateTime                  @map("vigencia_hasta") @db.Timestamptz(6)
+  estado            String                    @default("ACTIVA")
+  snapshotAsegurado Json                      @map("snapshot_asegurado")
+  createdAt         DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+
+  // Bienes y sujetos asegurados según el ramo
+  vehiculos         VehiculoAsegurado[]
+  inmuebles         InmuebleAsegurado[]
+  vidasAseguradas   VidaAsegurada[]
+  objetosPersonales ObjetoPersonalAsegurado[]
+
+  siniestros        Siniestro[]
+  asistencias       AsistenciaAuxilio[]
+
+  @@index([clienteId])
+  @@index([cotizacionId])
+  @@index([ramo])
+  @@map("polizas")
+}
+
+// Ramo 1: AUTOMOTOR
+model VehiculoAsegurado {
+  id        String   @id @default(uuid()) @db.Uuid
+  polizaId  String   @map("poliza_id") @db.Uuid
+  poliza    Poliza   @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  patente   String
+  marca     String
+  modelo    String
+  anio      Int
+  tieneGnc  Boolean  @default(false) @map("tiene_gnc")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([polizaId])
+  @@index([patente])
+  @@map("vehiculos_asegurados")
+}
+
+// Ramo 2: HOGAR E INMUEBLES
+model InmuebleAsegurado {
+  id               String       @id @default(uuid()) @db.Uuid
+  polizaId         String       @map("poliza_id") @db.Uuid
+  poliza           Poliza       @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  tipoInmueble     TipoInmueble @default(DEPARTAMENTO) @map("tipo_inmueble")
+  calle            String
+  numero           String
+  piso             String?
+  depto            String?
+  codigoPostal     String       @map("codigo_postal")
+  ciudad           String
+  provincia        String
+  superficieM2     Decimal      @map("superficie_m2") @db.Decimal(8, 2)
+  anioConstruccion Int?         @map("anio_construccion")
+  tieneAlarma      Boolean      @default(false) @map("tiene_alarma")
+  tieneRejas       Boolean      @default(false) @map("tiene_rejas")
+  sumaEdificio     Decimal      @map("suma_edificio") @db.Decimal(14, 2)
+  sumaContenido    Decimal      @map("suma_contenido") @db.Decimal(14, 2)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([polizaId])
+  @@index([codigoPostal])
+  @@map("inmuebles_asegurados")
+}
+
+// Ramo 3: VIDA Y ACCIDENTES PERSONALES
+model VidaAsegurada {
+  id              String             @id @default(uuid()) @db.Uuid
+  polizaId        String             @map("poliza_id") @db.Uuid
+  poliza          Poliza             @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  nombre          String
+  apellido        String
+  dni             String
+  fechaNacimiento DateTime           @map("fecha_nacimiento") @db.Date
+  genero          String?
+  esFumador       Boolean            @default(false) @map("es_fumador")
+  profesion       String?
+  sumaMuerte      Decimal            @map("suma_muerte") @db.Decimal(14, 2)
+  sumaInvalidez   Decimal            @map("suma_invalidez") @db.Decimal(14, 2)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  beneficiarios   BeneficiarioVida[]
+
+  @@index([polizaId])
+  @@index([dni])
+  @@map("vidas_aseguradas")
+}
+
+model BeneficiarioVida {
+  id              String                 @id @default(uuid()) @db.Uuid
+  vidaAseguradaId String                 @map("vida_asegurada_id") @db.Uuid
+  vidaAsegurada   VidaAsegurada          @relation(fields: [vidaAseguradaId], references: [id], onDelete: Restrict)
+  nombre          String
+  apellido        String
+  dni             String
+  parentesco      ParentescoBeneficiario @default(OTRO)
+  porcentaje      Decimal                @db.Decimal(5, 2)
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([vidaAseguradaId])
+  @@map("beneficiarios_vida")
+}
+
+// Ramo 4: OBJETOS PERSONALES Y TECNOLOGÍA
+model ObjetoPersonalAsegurado {
+  id               String             @id @default(uuid()) @db.Uuid
+  polizaId         String             @map("poliza_id") @db.Uuid
+  poliza           Poliza             @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  tipoObjeto       TipoObjetoPersonal @map("tipo_objeto")
+  marca            String
+  modelo           String
+  numeroSerie      String?            @map("numero_serie")
+  imei             String?
+  valorDeclarado   Decimal            @map("valor_declarado") @db.Decimal(14, 2)
+  coberturaMundial Boolean            @default(true) @map("cobertura_mundial")
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([polizaId])
+  @@index([numeroSerie])
+  @@map("objetos_personales_asegurados")
+}
+
+model Siniestro {
+  id              String      @id @default(uuid()) @db.Uuid
+  numeroSiniestro String      @unique @map("numero_siniestro")
+  polizaId        String      @map("poliza_id") @db.Uuid
+  poliza          Poliza      @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  ramo            RamoSeguro  @default(AUTOMOTOR)
+  fechaOcurrencia DateTime    @map("fecha_ocurrencia") @db.Timestamptz(6)
+  fechaDenuncia   DateTime    @default(now()) @map("fecha_denuncia") @db.Timestamptz(6)
+  tipoSiniestro   String      @map("tipo_siniestro")
+  descripcion     String      @db.Text
+  estado          String      @default("INGRESADO")
+  montoEstimado   Decimal     @map("monto_estimado") @db.Decimal(14, 2)
+  montoLiquidado  Decimal?    @map("monto_liquidado") @db.Decimal(14, 2)
+  fotosPeritaje   Json?       @map("fotos_peritaje")
+  dictamenPerito  String?     @db.Text @map("dictamen_perito")
+  fechaResolucion DateTime?   @map("fecha_resolucion") @db.Timestamptz(6)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([polizaId])
+  @@index([ramo])
+  @@map("siniestros")
+}
+
+model AsistenciaAuxilio {
+  id             String    @id @default(uuid()) @db.Uuid
+  polizaId       String    @map("poliza_id") @db.Uuid
+  poliza         Poliza    @relation(fields: [polizaId], references: [id], onDelete: Restrict)
+  tipoAsistencia String    @map("tipo_asistencia")
+  latitud        Decimal?  @db.Decimal(10, 7)
+  longitud       Decimal?  @db.Decimal(10, 7)
+  direccion      String?
+  estado         String    @default("SOLICITADO")
+  proveedor      String?
+  movilAsignado  String?   @map("movil_asignado")
+  etaMinutos     Int?      @map("eta_minutos")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([polizaId])
+  @@map("asistencias_auxilio")
+}
+
+// ==============================================================================
+// MÓDULO: CATÁLOGO ACTUARIAL Y VALUACIONES DE MERCADO (ACARA / DNRPA)
+// ==============================================================================
+
+model CatalogoMarca {
+  id         String           @id @default(uuid()) @db.Uuid
+  codigo     String           @unique
+  nombre     String
+  paisOrigen String?          @map("pais_origen")
+  activo     Boolean          @default(true)
+  modelos    CatalogoModelo[]
+
+  @@map("catalogo_marcas")
+}
+
+model CatalogoModelo {
+  id          String              @id @default(uuid()) @db.Uuid
+  marcaId     String              @map("marca_id") @db.Uuid
+  marca       CatalogoMarca       @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  codigo      String
+  nombre      String
+  segmento    String?
+  activo      Boolean             @default(true)
+  valuaciones CatalogoValuacion[]
+
+  @@unique([marcaId, codigo])
+  @@index([marcaId])
+  @@map("catalogo_modelos")
+}
+
+model CatalogoValuacion {
+  id            String         @id @default(uuid()) @db.Uuid
+  modeloId      String         @map("modelo_id") @db.Uuid
+  modelo        CatalogoModelo @relation(fields: [modeloId], references: [id], onDelete: Restrict)
+  anio          Int
+  sumaAsegurada Decimal        @map("suma_asegurada") @db.Decimal(14, 2)
+  codigoAcara   String?        @map("codigo_acara")
+  updatedAt     DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([modeloId, anio])
+  @@index([modeloId, anio])
+  @@map("catalogo_valuaciones")
+}
+
+model TasaRiesgoPostal {
+  id           String   @id @default(uuid()) @db.Uuid
+  codigoPostal String   @unique @map("codigo_postal")
+  provincia    String
+  localidad    String
+  factorRobo   Decimal  @default(1.00) @map("factor_robo") @db.Decimal(4, 2)
+  factorClima  Decimal  @default(1.00) @map("factor_clima") @db.Decimal(4, 2)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([codigoPostal])
+  @@map("tasas_riesgo_postal")
+}
+
+model CotizacionSyncLog {
+  id                 String   @id @default(uuid()) @db.Uuid
+  fuente             String   // 'ACARA_DNRPA_SYNC'
+  registrosAfectados Int      @default(0) @map("registros_afectados")
+  estado             String   @default("EXITOSO") // 'EXITOSO', 'FALLIDO'
+  detalle            String?  @db.Text
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("cotizacion_sync_logs")
+}
+
+// ==============================================================================
+// MÓDULO: BACKOFFICE Y EMPLEADOS
+// ==============================================================================
+
+model Empleado {
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  nombre       String
+  rol          RolEmpleado @default(COTIZACIONES)
+  activo       Boolean     @default(true)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([rol])
+  @@map("empleados")
+}
+
+// ==============================================================================
+// MÓDULO: COTIZACIONES DE VIDA Y OBJETOS PERSONALES
+// ==============================================================================
+
+model CotizacionVida {
+  id                        String      @id @default(uuid()) @db.Uuid
+  cotizacionId              String      @unique @map("cotizacion_id") @db.Uuid
+  cotizacion                Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  edad                      Int
+  genero                    String
+  ocupacion                 String
+  riesgoOcupacional         String      @map("riesgo_ocupacional")
+  fumador                   Boolean     @default(false)
+  deportesRiesgo            Boolean     @default(false) @map("deportes_riesgo")
+  enfermedadesPreexistentes Boolean     @default(false) @map("enfermedades_preexistentes")
+  capitalAsegurado          Decimal     @map("capital_asegurado") @db.Decimal(14, 2)
+  beneficiarios             Json        // Array de { nombre, dni, parentesco, porcentaje }
+  createdAt                 DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([cotizacionId])
+  @@map("cotizaciones_vida")
+}
+
+model CotizacionObjetoPersonal {
+  id              String      @id @default(uuid()) @db.Uuid
+  cotizacionId    String      @unique @map("cotizacion_id") @db.Uuid
+  cotizacion      Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  tipoObjeto      String      @map("tipo_objeto") // SMARTPHONE, NOTEBOOK_LAPTOP, CAMARA_FOTOGRAFICA, BICICLETA_MOVILIDAD
+  marca           String
+  modelo          String
+  imeiSerie       String      @map("imei_serie")
+  valorReposicion Decimal     @map("valor_reposicion") @db.Decimal(14, 2)
+  coberturaTipo   String      @map("cobertura_tipo")
+  franquicia      Decimal     @default(0.00) @db.Decimal(14, 2)
+  imagenesUrls    Json        @map("imagenes_urls")
+  facturaUrl      String?     @map("factura_url")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([cotizacionId])
+  @@map("cotizaciones_objeto_personal")
+}
+
+
