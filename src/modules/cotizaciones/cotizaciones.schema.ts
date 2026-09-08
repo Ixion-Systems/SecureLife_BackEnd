@@ -66,7 +66,7 @@ export const cotizacionAutoSchema = z.object({
   titular: titularSchema,
   vehiculo: vehiculoSchema,
   coberturaSolicitada: z.enum(
-    ['RESPONSABILIDAD_CIVIL', 'TERCEROS_COMPLETO', 'TODO_RIESGO_CON_FRANQUICIA'],
+    ['RESPONSABILIDAD_CIVIL', 'TERCEROS_BASICO', 'TERCEROS_COMPLETO', 'TODO_RIESGO_CON_FRANQUICIA'],
     {
       required_error: 'La cobertura solicitada es obligatoria',
       invalid_type_error: 'Tipo de cobertura no válida',

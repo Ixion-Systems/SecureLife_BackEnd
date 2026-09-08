@@ -2,6 +2,11 @@ import express, { Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { cotizacionesRouter } from './modules/cotizaciones/cotizaciones.routes';
+import { autoRouter } from './modules/cotizaciones/auto/auto.routes';
+import { cotizacionInmuebleRouter } from './modules/cotizaciones/inmueble/inmueble.routes';
+import { cotizadorRouter } from './modules/cotizador/cotizador.routes';
+import { authRouter } from './modules/auth/auth.routes';
+import { dashboardRouter } from './modules/dashboard/dashboard.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 export const createApp = (): Application => {
@@ -35,7 +40,12 @@ export const createApp = (): Application => {
   });
 
   // 5. Montaje de módulos de dominio
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/cotizaciones/auto', autoRouter);
+  app.use('/api/v1/cotizaciones/inmueble', cotizacionInmuebleRouter);
   app.use('/api/v1/cotizaciones', cotizacionesRouter);
+  app.use('/api/v1/cotizador', cotizadorRouter);
+  app.use('/api/v1/dashboard', dashboardRouter);
 
   // 6. Manejo de rutas no encontradas (404)
   app.use('*', (_req, res) => {

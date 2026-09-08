@@ -33,3 +33,9 @@ Thumbs.db
 # Cache & Testing
 coverage/
 *.tsbuildinfo
+
+# Embedded Database Runtime & Persistence (do NOT commit data)
+.pgdata/
+*.db
+*.sqlite
+*.sqlite3

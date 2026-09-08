@@ -41,6 +41,11 @@ const TABLA_COBERTURAS: Record<CoberturaTipo, CoberturaConfig> = {
     sumaAseguradaBase: 160000000,
     franquicia: 0,
   },
+  TERCEROS_BASICO: {
+    basePrima: 41000,
+    sumaAseguradaBase: 20000000,
+    franquicia: 0,
+  },
   TERCEROS_COMPLETO: {
     basePrima: 54000,
     sumaAseguradaBase: 26000000,
