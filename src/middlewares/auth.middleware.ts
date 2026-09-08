@@ -52,3 +52,30 @@ export const requireRole = (...roles: Role[]) => {
     next();
   };
 };
+
+/**
+ * Middleware para autenticación opcional: inyecta req.user si el token es válido, pero no bloquea si no hay token
+ */
+export const optionalAuthenticate = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    req.user = decoded;
+  } catch {
+    // Si el token es inválido o expiró, ignorar silenciosamente en modo opcional
+  }
+
+  next();
+};
+

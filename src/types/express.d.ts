@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, RolEmpleado } from '@prisma/client';
 
 declare global {
   namespace Express {
@@ -7,6 +7,12 @@ declare global {
         userId: string;
         email: string;
         role: Role;
+      };
+      empleado?: {
+        empleadoId: string;
+        email: string;
+        nombre: string;
+        rol: RolEmpleado;
       };
     }
   }

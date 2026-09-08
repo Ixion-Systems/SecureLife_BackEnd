@@ -17,6 +17,14 @@ enum Role {
   OPERADOR
 }
 
+enum RolEmpleado {
+  ADMIN
+  COTIZACIONES
+  SINIESTROS
+  GRUA_AUXILIO
+  SUPERVISOR
+}
+
 enum RamoSeguro {
   AUTOMOTOR
   VIDA
@@ -140,7 +148,9 @@ model Cotizacion {
   createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  polizas          Poliza[]
+  polizas                  Poliza[]
+  cotizacionVida           CotizacionVida?
+  cotizacionObjetoPersonal CotizacionObjetoPersonal?
 
   @@index([userId])
   @@index([ramo])
@@ -301,6 +311,9 @@ model Siniestro {
   estado          String      @default("INGRESADO")
   montoEstimado   Decimal     @map("monto_estimado") @db.Decimal(14, 2)
   montoLiquidado  Decimal?    @map("monto_liquidado") @db.Decimal(14, 2)
+  fotosPeritaje   Json?       @map("fotos_peritaje")
+  dictamenPerito  String?     @db.Text @map("dictamen_perito")
+  fechaResolucion DateTime?   @map("fecha_resolucion") @db.Timestamptz(6)
   createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -318,6 +331,8 @@ model AsistenciaAuxilio {
   longitud       Decimal?  @db.Decimal(10, 7)
   direccion      String?
   estado         String    @default("SOLICITADO")
+  proveedor      String?
+  movilAsignado  String?   @map("movil_asignado")
   etaMinutos     Int?      @map("eta_minutos")
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -393,4 +408,68 @@ model CotizacionSyncLog {
 
   @@map("cotizacion_sync_logs")
 }
+
+// ==============================================================================
+// MÓDULO: BACKOFFICE Y EMPLEADOS
+// ==============================================================================
+
+model Empleado {
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  nombre       String
+  rol          RolEmpleado @default(COTIZACIONES)
+  activo       Boolean     @default(true)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([email])
+  @@index([rol])
+  @@map("empleados")
+}
+
+// ==============================================================================
+// MÓDULO: COTIZACIONES DE VIDA Y OBJETOS PERSONALES
+// ==============================================================================
+
+model CotizacionVida {
+  id                        String      @id @default(uuid()) @db.Uuid
+  cotizacionId              String      @unique @map("cotizacion_id") @db.Uuid
+  cotizacion                Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  edad                      Int
+  genero                    String
+  ocupacion                 String
+  riesgoOcupacional         String      @map("riesgo_ocupacional")
+  fumador                   Boolean     @default(false)
+  deportesRiesgo            Boolean     @default(false) @map("deportes_riesgo")
+  enfermedadesPreexistentes Boolean     @default(false) @map("enfermedades_preexistentes")
+  capitalAsegurado          Decimal     @map("capital_asegurado") @db.Decimal(14, 2)
+  beneficiarios             Json        // Array de { nombre, dni, parentesco, porcentaje }
+  createdAt                 DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([cotizacionId])
+  @@map("cotizaciones_vida")
+}
+
+model CotizacionObjetoPersonal {
+  id              String      @id @default(uuid()) @db.Uuid
+  cotizacionId    String      @unique @map("cotizacion_id") @db.Uuid
+  cotizacion      Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  tipoObjeto      String      @map("tipo_objeto") // SMARTPHONE, NOTEBOOK_LAPTOP, CAMARA_FOTOGRAFICA, BICICLETA_MOVILIDAD
+  marca           String
+  modelo          String
+  imeiSerie       String      @map("imei_serie")
+  valorReposicion Decimal     @map("valor_reposicion") @db.Decimal(14, 2)
+  coberturaTipo   String      @map("cobertura_tipo")
+  franquicia      Decimal     @default(0.00) @db.Decimal(14, 2)
+  imagenesUrls    Json        @map("imagenes_urls")
+  facturaUrl      String?     @map("factura_url")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([cotizacionId])
+  @@map("cotizaciones_objeto_personal")
+}
+
 

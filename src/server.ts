@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { ensureEmbeddedDatabase } from './config/embeddedDb';
+import { ensureAdminSeed } from './config/seed-admin';
 import { app } from './app';
 import { cotizadorSyncService } from './modules/cotizador/cotizador.sync.service';
 
@@ -10,6 +11,8 @@ const PORT = Number(process.env.PORT) || 3000;
 async function bootstrap() {
   // Asegurar inicialización y ejecución del motor PostgreSQL embebido
   await ensureEmbeddedDatabase();
+  // Asegurar semilla del administrador de BackOffice
+  await ensureAdminSeed();
 
   const server = app.listen(PORT, () => {
     console.log(`🚀 [SecureLife Backend] Servidor ejecutándose en http://localhost:${PORT}`);
