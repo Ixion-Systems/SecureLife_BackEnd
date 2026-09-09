@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { dashboardService, DashboardService } from './dashboard.service';
 import { UnauthorizedError } from '../../middlewares/error.middleware';
+import { RequestAssistanceDTO } from './dashboard.schema';
 
 export class DashboardController {
   constructor(private readonly service: DashboardService = dashboardService) {}
@@ -56,7 +57,11 @@ export class DashboardController {
     }
   };
 
-  requestAssistance = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  requestAssistance = async (
+    req: Request<unknown, unknown, RequestAssistanceDTO>,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       if (!req.user) {
         throw new UnauthorizedError('Usuario no autenticado');

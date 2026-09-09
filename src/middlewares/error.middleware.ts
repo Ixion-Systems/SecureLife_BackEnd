@@ -65,7 +65,7 @@ export const errorHandler = (
   }
 
   // Error no controlado (500)
-  console.error('💥 ERROR INESPERADO:', err);
+  console.error('[UNHANDLED_EXCEPTION]:', err);
   res.status(500).json({
     status: 'error',
     message:

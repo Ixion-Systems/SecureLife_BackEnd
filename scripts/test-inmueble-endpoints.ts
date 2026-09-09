@@ -6,7 +6,7 @@ import http from 'http';
 const JWT_SECRET = process.env.JWT_SECRET || 'securelife_jwt_super_secret_key_2026';
 
 async function runTests() {
-  console.log('🚀 Iniciando suite de pruebas para módulo HOGAR_INMUEBLE...');
+  console.log('[TEST] Iniciando suite de pruebas para módulo HOGAR_INMUEBLE...');
 
   const app = createApp();
   const server = http.createServer(app);
@@ -17,7 +17,7 @@ async function runTests() {
 
   const address = server.address() as { port: number };
   const baseUrl = `http://localhost:${address.port}/api/v1/cotizaciones/inmueble`;
-  console.log(`🌐 Servidor de prueba escuchando en http://localhost:${address.port}`);
+  console.log(`[TEST] Servidor de prueba escuchando en http://localhost:${address.port}`);
 
   try {
     // 1. Obtener o crear un usuario cliente para las pruebas con JWT
@@ -66,7 +66,13 @@ async function runTests() {
       body: JSON.stringify(calcPayload),
     });
 
-    const calcData: any = await calcRes.json();
+    const calcData = (await calcRes.json()) as {
+      status: string;
+      data: {
+        sumasAseguradas: { edificio: number; contenido: number; total: number };
+        desgloseTecnicoMensual: { recargoTecho: number; descuentoSeguridad: number };
+      };
+    };
     console.log('Status /calcular:', calcRes.status);
     console.log('Data /calcular:', JSON.stringify(calcData, null, 2));
 
@@ -79,7 +85,7 @@ async function runTests() {
         `TEST 1 Falló: Se esperaba sumaEdificio 95000000 pero se obtuvo ${calcData.data.sumasAseguradas.edificio}`
       );
     }
-    console.log('✅ TEST 1 PASÓ: Cálculo actuarial preliminar correcto.');
+    console.log('[SUCCESS] TEST 1 PASÓ: Cálculo actuarial preliminar correcto.');
 
     // =========================================================================
     // TEST 2: POST /calcular con recargo de techo CHAPA (+8%) y descuento completo (-15%)
@@ -104,7 +110,12 @@ async function runTests() {
       body: JSON.stringify(calcPayloadChapa),
     });
 
-    const calcDataChapa: any = await calcResChapa.json();
+    const calcDataChapa = (await calcResChapa.json()) as {
+      status: string;
+      data: {
+        desgloseTecnicoMensual: { recargoTecho: number; descuentoSeguridad: number };
+      };
+    };
     console.log('Status /calcular (Chapa):', calcResChapa.status);
     console.log('Desglose mensual:', calcDataChapa.data.desgloseTecnicoMensual);
 
@@ -114,7 +125,7 @@ async function runTests() {
     if (calcDataChapa.data.desgloseTecnicoMensual.descuentoSeguridad <= 0) {
       throw new Error('TEST 2 Falló: El descuento por alarma y rejas debería ser > 0');
     }
-    console.log('✅ TEST 2 PASÓ: Recargos y bonificaciones aplicados correctamente.');
+    console.log('[SUCCESS] TEST 2 PASÓ: Recargos y bonificaciones aplicados correctamente.');
 
     // =========================================================================
     // TEST 3: POST / (Sin autenticación debe dar 401)
@@ -129,7 +140,7 @@ async function runTests() {
     if (unauthRes.status !== 401) {
       throw new Error(`TEST 3 Falló: Se esperaba 401 pero se obtuvo ${unauthRes.status}`);
     }
-    console.log('✅ TEST 3 PASÓ: Endpoint protegido por JWT correctamente.');
+    console.log('[SUCCESS] TEST 3 PASÓ: Endpoint protegido por JWT correctamente.');
 
     // =========================================================================
     // TEST 4: POST / (Creación oficial de cotización de inmueble autenticada)
@@ -170,7 +181,15 @@ async function runTests() {
       body: JSON.stringify(createPayload),
     });
 
-    const createData: any = await createRes.json();
+    const createData = (await createRes.json()) as {
+      status: string;
+      data: {
+        cotizacionId: string;
+        numeroCotizacion: string;
+        ramo: string;
+        estado: string;
+      };
+    };
     console.log('Status / (Creación):', createRes.status);
     console.log('Data / (Creación):', JSON.stringify(createData, null, 2));
 
@@ -197,7 +216,7 @@ async function runTests() {
     if (!dbCotizacion) {
       throw new Error('TEST 4 Falló: La cotización no fue encontrada en la base de datos');
     }
-    console.log('✅ TEST 4 PASÓ: Cotización persistida con éxito en PostgreSQL.');
+    console.log('[SUCCESS] TEST 4 PASÓ: Cotización persistida con éxito en PostgreSQL.');
 
     // =========================================================================
     // TEST 5: Validación Zod (Superficie negativa debe retornar 422)
@@ -214,16 +233,20 @@ async function runTests() {
       body: JSON.stringify(invalidPayload),
     });
 
-    const invalidData: any = await invalidRes.json();
+    const invalidData = (await invalidRes.json()) as {
+      status: string;
+      message: string;
+      errors?: unknown;
+    };
     console.log('Status validación inválida:', invalidRes.status);
     console.log('Detalles Zod:', invalidData);
 
     if (invalidRes.status !== 422) {
       throw new Error(`TEST 5 Falló: Se esperaba 422 pero se obtuvo ${invalidRes.status}`);
     }
-    console.log('✅ TEST 5 PASÓ: Validación Zod preventiva funciona a la perfección.');
+    console.log('[SUCCESS] TEST 5 PASÓ: Validación Zod preventiva funciona a la perfección.');
 
-    console.log('\n🎉 TODOS LOS TESTS DEL MÓDULO HOGAR_INMUEBLE PASARON EXITOSAMENTE.');
+    console.log('\n[SUCCESS] TODOS LOS TESTS DEL MÓDULO HOGAR_INMUEBLE PASARON EXITOSAMENTE.');
   } finally {
     server.close();
     await prisma.$disconnect();
@@ -231,6 +254,6 @@ async function runTests() {
 }
 
 runTests().catch((err) => {
-  console.error('❌ Error durante las pruebas:', err);
+  console.error('[ERROR] Error durante las pruebas:', err);
   process.exit(1);
 });

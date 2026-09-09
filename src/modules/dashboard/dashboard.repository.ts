@@ -44,6 +44,20 @@ export interface ActivityRow {
   created_at: Date;
 }
 
+export interface RoadsideAssistanceRow {
+  asistencia_id: string;
+  poliza_id: string;
+  tipo_asistencia: string;
+  estado: string;
+  latitud: number | null;
+  longitud: number | null;
+  direccion: string | null;
+  proveedor: string | null;
+  movil_asignado: string | null;
+  eta_minutos: number | null;
+  created_at: Date;
+}
+
 export class DashboardRepository {
   /**
    * Invoca el Stored Procedure sp_get_client_dashboard para obtener métricas pre-agregadas
@@ -83,8 +97,8 @@ export class DashboardRepository {
     lat?: number,
     lng?: number,
     direccion?: string
-  ) {
-    const rows = await prisma.$queryRaw<any[]>`
+  ): Promise<RoadsideAssistanceRow | null> {
+    const rows = await prisma.$queryRaw<RoadsideAssistanceRow[]>`
       SELECT * FROM sp_request_roadside_assistance(
         ${userId}::uuid,
         ${policyId}::uuid,
@@ -94,7 +108,7 @@ export class DashboardRepository {
         ${direccion ?? null}::text
       );
     `;
-    return rows[0];
+    return rows[0] || null;
   }
 }
 

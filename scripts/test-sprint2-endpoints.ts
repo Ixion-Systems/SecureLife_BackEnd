@@ -4,7 +4,7 @@ import { app } from '../src/app';
 import { Server } from 'http';
 
 async function main() {
-  console.log('🚀 [Test Sprint 2] Inicializando entorno...');
+  console.log('[TEST] [Test Sprint 2] Inicializando entorno...');
   await ensureEmbeddedDatabase();
   await ensureAdminSeed();
 
@@ -13,7 +13,7 @@ async function main() {
   const baseUrl = `http://localhost:${PORT}`;
 
   try {
-    console.log(`🌐 Servidor de pruebas escuchando en ${baseUrl}`);
+    console.log(`[TEST] Servidor de pruebas escuchando en ${baseUrl}`);
 
     // Helper para fetch
     const request = async (url: string, options: RequestInit = {}) => {
@@ -44,17 +44,18 @@ async function main() {
     if (corsRes.headers.get('access-control-allow-origin') !== 'http://localhost:5174') {
       throw new Error('CORS no permitió origin http://localhost:5174');
     }
-    console.log('✅ CORS 5174 validado correctamente.');
+    console.log('[SUCCESS] CORS 5174 validado correctamente.');
 
     // --------------------------------------------------------------------------
     // 2. BACKOFFICE: LOGIN ADMIN
     // --------------------------------------------------------------------------
     console.log('\n--- 2. Login de Administrador en BackOffice ---');
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'DevSeedAdmin#2026';
     const loginRes = await request('/api/v1/backoffice/auth/login', {
       method: 'POST',
       body: JSON.stringify({
         email: 'admin@securelife.com',
-        password: 'AdminSecure2026!',
+        password: adminPassword,
       }),
     });
     console.log('Login status:', loginRes.status);
@@ -62,7 +63,7 @@ async function main() {
       throw new Error(`Fallo en login de admin: ${JSON.stringify(loginRes.data)}`);
     }
     const adminToken = loginRes.data.data.token;
-    console.log('✅ Admin autenticado con éxito. Rol:', loginRes.data.data.empleado.rol);
+    console.log('[SUCCESS] Admin autenticado con éxito. Rol:', loginRes.data.data.empleado.rol);
 
     const authHeaders = { Authorization: `Bearer ${adminToken}` };
 
@@ -77,19 +78,20 @@ async function main() {
     if (profileRes.status !== 200) {
       throw new Error('Fallo al obtener profile');
     }
-    console.log('✅ Profile obtenido con éxito.');
+    console.log('[SUCCESS] Profile obtenido con éxito.');
 
     // --------------------------------------------------------------------------
     // 4. BACKOFFICE: CREAR EMPLEADO
     // --------------------------------------------------------------------------
     console.log('\n--- 4. Crear Empleado (rol: COTIZACIONES) ---');
     const testEmail = `perito_${Date.now()}@securelife.com`;
+    const testPassword = process.env.TEST_PASSWORD || 'DevTestPass#2026';
     const createEmpRes = await request('/api/v1/backoffice/empleados', {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({
         email: testEmail,
-        password: 'PeritoSecure2026!',
+        password: testPassword,
         nombre: 'Perito Cotizador Senior',
         rol: 'COTIZACIONES',
       }),
@@ -99,7 +101,7 @@ async function main() {
       throw new Error(`Fallo al crear empleado: ${JSON.stringify(createEmpRes.data)}`);
     }
     const createdEmpId = createEmpRes.data.data.id;
-    console.log('✅ Empleado creado:', createdEmpId, 'Email:', testEmail);
+    console.log('[SUCCESS] Empleado creado:', createdEmpId, 'Email:', testEmail);
 
     // --------------------------------------------------------------------------
     // 5. BACKOFFICE: LISTAR Y CAMBIAR STATUS EMPLEADO
@@ -119,7 +121,7 @@ async function main() {
     if (statusRes.data?.data?.activo !== false) {
       throw new Error('Fallo al desactivar empleado');
     }
-    console.log('✅ Status de empleado actualizado con éxito.');
+    console.log('[SUCCESS] Status de empleado actualizado con éxito.');
 
     // --------------------------------------------------------------------------
     // 6. CLIENTE: COTIZACIÓN DE VIDA
@@ -162,7 +164,7 @@ async function main() {
       throw new Error(`Fallo al crear cotización de vida: ${JSON.stringify(createVidaRes.data)}`);
     }
     const cotizacionVidaId = createVidaRes.data.data.cotizacionId;
-    console.log('✅ Cotización de Vida creada:', cotizacionVidaId, 'Número:', createVidaRes.data.data.numeroCotizacion);
+    console.log('[SUCCESS] Cotización de Vida creada:', cotizacionVidaId, 'Número:', createVidaRes.data.data.numeroCotizacion);
 
     // --------------------------------------------------------------------------
     // 7. CLIENTE: COTIZACIÓN DE OBJETO PERSONAL
@@ -201,7 +203,7 @@ async function main() {
       throw new Error(`Fallo al crear cotización de objeto: ${JSON.stringify(createObjRes.data)}`);
     }
     const cotizacionObjId = createObjRes.data.data.cotizacionId;
-    console.log('✅ Cotización de Objeto Personal creada:', cotizacionObjId, 'Número:', createObjRes.data.data.numeroCotizacion);
+    console.log('[SUCCESS] Cotización de Objeto Personal creada:', cotizacionObjId, 'Número:', createObjRes.data.data.numeroCotizacion);
 
     // --------------------------------------------------------------------------
     // 8. BACKOFFICE: GESTIÓN DE COTIZACIONES
@@ -224,7 +226,7 @@ async function main() {
     if (respCotRes.data?.data?.estado !== 'APROBADA') {
       throw new Error('Fallo al responder cotización');
     }
-    console.log('✅ Cotización aprobada con éxito desde BackOffice.');
+    console.log('[SUCCESS] Cotización aprobada con éxito desde BackOffice.');
 
     // --------------------------------------------------------------------------
     // 9. BACKOFFICE: SINIESTROS
@@ -234,7 +236,7 @@ async function main() {
       headers: authHeaders,
     });
     console.log('Listar siniestros status:', listSiniestrosRes.status, 'Total:', listSiniestrosRes.data?.data?.length);
-    console.log('✅ Consulta de siniestros exitosa.');
+    console.log('[SUCCESS] Consulta de siniestros exitosa.');
 
     // --------------------------------------------------------------------------
     // 10. BACKOFFICE: GRÚAS / AUXILIO MECÁNICO
@@ -244,17 +246,17 @@ async function main() {
       headers: authHeaders,
     });
     console.log('Listar grúas status:', listGruasRes.status, 'Total:', listGruasRes.data?.data?.length);
-    console.log('✅ Consulta de grúas exitosa.');
+    console.log('[SUCCESS] Consulta de grúas exitosa.');
 
-    console.log('\n🎉 =======================================================');
-    console.log('🎉 TODOS LOS TESTS DE SPRINT 2 Y BACKOFFICE PASARON CON ÉXITO');
-    console.log('🎉 =======================================================\n');
+    console.log('\n=======================================================');
+    console.log('[SUCCESS] TODOS LOS TESTS DE SPRINT 2 Y BACKOFFICE PASARON CON ÉXITO');
+    console.log('=======================================================\n');
   } finally {
     server.close();
   }
 }
 
 main().catch((err) => {
-  console.error('\n❌ ERROR EN PRUEBAS:', err);
+  console.error('\n[ERROR] ERROR EN PRUEBAS:', err);
   process.exit(1);
 });

@@ -15,11 +15,11 @@ async function bootstrap() {
   await ensureAdminSeed();
 
   const server = app.listen(PORT, () => {
-    console.log(`🚀 [SecureLife Backend] Servidor ejecutándose en http://localhost:${PORT}`);
-    console.log(`🛡️  Modo: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🩺 Health Check: http://localhost:${PORT}/api/v1/health`);
-    console.log(`🚗 Cotizaciones Auto: http://localhost:${PORT}/api/v1/cotizaciones/auto`);
-    console.log(`📊 Catálogo Cotizador: http://localhost:${PORT}/api/v1/cotizador/marcas`);
+    console.log(`[SERVER] Servidor ejecutándose en http://localhost:${PORT}`);
+    console.log(`[SERVER] Modo: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`[HEALTH] Health Check: http://localhost:${PORT}/api/v1/health`);
+    console.log(`[ROUTER] Cotizaciones Auto: http://localhost:${PORT}/api/v1/cotizaciones/auto`);
+    console.log(`[ROUTER] Catálogo Cotizador: http://localhost:${PORT}/api/v1/cotizador/marcas`);
 
     // Iniciar planificador semanal automático de valuaciones ACARA / DNRPA
     cotizadorSyncService.startScheduler();
@@ -27,15 +27,15 @@ async function bootstrap() {
 
   // Cierre seguro (Graceful Shutdown)
   const gracefulShutdown = (signal: string): void => {
-    console.log(`\n🛑 Recibida señal ${signal}. Cerrando conexiones del servidor de forma segura...`);
+    console.log(`\n[SHUTDOWN] Recibida señal ${signal}. Cerrando conexiones del servidor de forma segura...`);
     server.close(() => {
-      console.log('✅ Servidor HTTP cerrado correctamente.');
+      console.log('[SHUTDOWN] Servidor HTTP cerrado correctamente.');
       process.exit(0);
     });
 
     // Forzar cierre si no finalizan las conexiones activas en 10s
     setTimeout(() => {
-      console.error('⚠️ Forzando cierre del servidor tras superar tiempo límite de espera.');
+      console.error('[SHUTDOWN] Forzando cierre del servidor tras superar tiempo límite de espera.');
       process.exit(1);
     }, 10000);
   };
@@ -45,7 +45,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch((err) => {
-  console.error('❌ Error al iniciar el servidor SecureLife:', err);
+  console.error('[ERROR] Error al iniciar el servidor SecureLife:', err);
   process.exit(1);
 });
 

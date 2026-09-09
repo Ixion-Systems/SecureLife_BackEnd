@@ -84,7 +84,7 @@ export class CotizadorSyncService {
         }
       }
 
-      console.log('🔄 [CotizadorSyncService] Iniciando sincronización semanal de valuaciones ACARA/DNRPA...');
+      console.log('[SYNC_SERVICE] Iniciando sincronización semanal de valuaciones ACARA/DNRPA...');
 
       let affected = 0;
       for (const item of DATASET_VALUACIONES_BASE) {
@@ -99,11 +99,11 @@ export class CotizadorSyncService {
         `Sincronización semanal automática completada. ${affected} valuaciones actualizadas.`
       );
 
-      console.log(`✅ [CotizadorSyncService] Sincronización exitosa: ${affected} valuaciones procesadas.`);
+      console.log(`[SYNC_SERVICE] Sincronización exitosa: ${affected} valuaciones procesadas.`);
       return { success: true, affected, reason: 'Sincronización semanal exitosa' };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('❌ [CotizadorSyncService] Error durante sincronización:', err);
+      console.error('[SYNC_SERVICE] Error durante sincronización:', err);
       await this.repository.recordSyncLog(
         'ACARA_DNRPA_SEMANAL',
         0,
@@ -120,14 +120,14 @@ export class CotizadorSyncService {
   startScheduler() {
     // 1. Ejecutar verificación preventiva al iniciar el servidor
     this.syncValuaciones(false).catch((err) =>
-      console.error('[CotizadorSyncService] Fallo en sync inicial:', err)
+      console.error('[SYNC_SERVICE] Fallo en sync inicial:', err)
     );
 
     // 2. Programar comprobación diaria continua
     if (!this.timer) {
       this.timer = setInterval(() => {
         this.syncValuaciones(false).catch((err) =>
-          console.error('[CotizadorSyncService] Fallo en ciclo de sync:', err)
+          console.error('[SYNC_SERVICE] Fallo en ciclo de sync:', err)
         );
       }, this.SYNC_INTERVAL_MS);
       this.timer.unref(); // No bloquea la terminación del proceso si se apaga

@@ -1,5 +1,6 @@
 import { cotizadorRepository, CotizadorRepository, CotizacionAutoInput } from './cotizador.repository';
 import { cotizadorSyncService, CotizadorSyncService } from './cotizador.sync.service';
+import { BadRequestError } from '../../middlewares/error.middleware';
 
 export class CotizadorService {
   constructor(
@@ -39,7 +40,7 @@ export class CotizadorService {
     const raw = await this.repository.calcularCotizacion(input);
 
     if (!raw) {
-      throw new Error('No se pudo calcular la cotización para el vehículo especificado.');
+      throw new BadRequestError('No se pudo calcular la cotización para el vehículo especificado.');
     }
 
     return {
