@@ -6,7 +6,10 @@ import {
   CalcularCotizacionVidaDTO,
   CrearCotizacionVidaDTO,
 } from './vida.schema';
-import { BadRequestError } from '../../../middlewares/error.middleware';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../../middlewares/error.middleware';
 
 export class CotizacionVidaService {
   constructor(
@@ -55,7 +58,11 @@ export class CotizacionVidaService {
   }
 
   async obtenerPorId(id: string) {
-    return this.repo.findById(id);
+    const cotizacion = await this.repo.findById(id);
+    if (!cotizacion) {
+      throw new NotFoundError(`No se encontró la cotización de vida con ID: ${id}`);
+    }
+    return cotizacion;
   }
 }
 

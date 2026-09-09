@@ -22,6 +22,18 @@ export interface ValuacionVehiculoInput {
   codigoAcara?: string;
 }
 
+export interface CalculoAutoSPRow {
+  suma_asegurada: number | string;
+  tasa_pura: number | string;
+  factor_postal: number | string;
+  prima_mensual_estimada: number | string;
+  franquicia: number | string;
+  premio_base_mensual: number | string;
+  recargo_gnc_mensual: number | string;
+  ajuste_km_mensual: number | string;
+  impuestos_mensuales: number | string;
+}
+
 export class CotizadorRepository {
   constructor(private readonly db: PrismaClient = prisma) {}
 
@@ -70,8 +82,8 @@ export class CotizadorRepository {
   /**
    * Invoca el Stored Procedure actuarial para calcular la prima en PostgreSQL
    */
-  async calcularCotizacion(input: CotizacionAutoInput) {
-    const rows = await this.db.$queryRaw<any[]>`
+  async calcularCotizacion(input: CotizacionAutoInput): Promise<CalculoAutoSPRow | null> {
+    const rows = await this.db.$queryRaw<CalculoAutoSPRow[]>`
       SELECT * FROM sp_calcular_cotizacion_auto(
         ${input.marcaCodigo}::text,
         ${input.modeloCodigo}::text,

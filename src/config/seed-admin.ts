@@ -9,7 +9,8 @@ export async function ensureAdminSeed(): Promise<void> {
       where: { email: adminEmail },
     });
 
-    const passwordHash = await bcrypt.hash('AdminSecure2026!', 10);
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'DevSeedAdmin#2026';
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
 
     if (!existing) {
       await prisma.empleado.create({
@@ -22,7 +23,7 @@ export async function ensureAdminSeed(): Promise<void> {
           activo: true,
         },
       });
-      console.log('✅ [Seed Admin] Administrador inicial creado: admin@securelife.com');
+      console.log('[SEED-ADMIN] Administrador inicial creado: admin@securelife.com');
     } else {
       // Asegurar que esté activo y con la contraseña vigente
       await prisma.empleado.update({
@@ -34,9 +35,9 @@ export async function ensureAdminSeed(): Promise<void> {
           activo: true,
         },
       });
-      console.log('✅ [Seed Admin] Administrador verificado y activo.');
+      console.log('[SEED-ADMIN] Administrador verificado y activo.');
     }
   } catch (err: unknown) {
-    console.error('⚠️ [Seed Admin] Error al verificar/crear administrador inicial:', err);
+    console.error('[SEED-ADMIN] Error al verificar/crear administrador inicial:', err);
   }
 }

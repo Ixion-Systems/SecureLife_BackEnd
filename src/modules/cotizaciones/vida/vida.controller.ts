@@ -31,13 +31,6 @@ export class CotizacionVidaController {
   async obtenerPorId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const cotizacion = await cotizacionVidaService.obtenerPorId(req.params.id);
-      if (!cotizacion) {
-        res.status(404).json({
-          status: 'fail',
-          message: 'Cotización no encontrada',
-        });
-        return;
-      }
       res.status(200).json({
         status: 'success',
         data: cotizacion,

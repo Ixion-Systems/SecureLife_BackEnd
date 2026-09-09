@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { cotizadorService, CotizadorService } from './cotizador.service';
+import { CalcularSimulacionDTO } from './cotizador.schema';
 
 export class CotizadorController {
   constructor(private readonly service: CotizadorService = cotizadorService) {}
@@ -28,26 +29,20 @@ export class CotizadorController {
     }
   };
 
-  calcular = async (req: Request, res: Response, next: NextFunction) => {
+  calcular = async (
+    req: Request<unknown, unknown, CalcularSimulacionDTO>,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
-      const { marcaCodigo, modeloCodigo, anio, codigoPostal, planCobertura, tieneGnc, ajusteKm } = req.body;
-
-      if (!marcaCodigo || !modeloCodigo || !anio) {
-        res.status(400).json({
-          status: 'fail',
-          message: 'marcaCodigo, modeloCodigo y anio son requeridos.',
-        });
-        return;
-      }
-
       const result = await this.service.calcularCotizacion({
-        marcaCodigo: String(marcaCodigo).toLowerCase(),
-        modeloCodigo: String(modeloCodigo).toLowerCase(),
-        anio: Number(anio),
-        codigoPostal: codigoPostal ? String(codigoPostal) : '1001',
-        planCobertura: planCobertura ? String(planCobertura) : 'TODO_RIESGO',
-        tieneGnc: Boolean(tieneGnc),
-        ajusteKm: ajusteKm ? Number(ajusteKm) : 15000,
+        marcaCodigo: req.body.marcaCodigo.toLowerCase(),
+        modeloCodigo: req.body.modeloCodigo.toLowerCase(),
+        anio: req.body.anio,
+        codigoPostal: req.body.codigoPostal,
+        planCobertura: req.body.planCobertura,
+        tieneGnc: req.body.tieneGnc,
+        ajusteKm: req.body.ajusteKm,
       });
 
       res.status(200).json({ status: 'success', data: result });

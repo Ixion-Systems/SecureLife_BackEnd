@@ -6,7 +6,10 @@ import {
   CalcularCotizacionObjetoDTO,
   CrearCotizacionObjetoDTO,
 } from './objeto.schema';
-import { BadRequestError } from '../../../middlewares/error.middleware';
+import {
+  BadRequestError,
+  NotFoundError,
+} from '../../../middlewares/error.middleware';
 
 export class CotizacionObjetoService {
   constructor(
@@ -53,7 +56,11 @@ export class CotizacionObjetoService {
   }
 
   async obtenerPorId(id: string) {
-    return this.repo.findById(id);
+    const cotizacion = await this.repo.findById(id);
+    if (!cotizacion) {
+      throw new NotFoundError(`No se encontró la cotización de objeto personal con ID: ${id}`);
+    }
+    return cotizacion;
   }
 }
 
